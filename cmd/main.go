@@ -2,18 +2,25 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/Room-Balance/room-balance-backend.git/db"
+	"github.com/Room-Balance/room-balance-backend.git/routes"
 )
 
 func main() {
-	log.Println("Starting Room Balance Backend...")
-
-	// Connect to database
+	// Connect to the database
 	db.ConnectDB()
-
-	log.Println("Application started successfully!")
-
 	db.MigrateDB()
 
+	// Initialize routes
+	router := routes.RegisterRoutes()
+
+	// Start the HTTP server
+	port := ":8080"
+	log.Printf("Server running on http://localhost%s", port)
+	err := http.ListenAndServe(port, router)
+	if err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
