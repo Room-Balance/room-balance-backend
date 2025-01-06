@@ -1,0 +1,304 @@
+openapi: 3.0.3
+info:
+  title: Room-Balance Backend API
+  description: API for managing houses, tasks, expenses, events, and users in the Room-Balance application.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+paths:
+  /users:
+    get:
+      summary: Get all users in the requesting user's house
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/me:
+    get:
+      summary: Get details of the authenticated user
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /houses:
+    post:
+      summary: Create a new house
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                rent:
+                  type: number
+      responses:
+        '201':
+          description: House created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/House'
+
+  /houses/me:
+    get:
+      summary: Get the house associated with the requesting user
+      responses:
+        '200':
+          description: House details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/House'
+    put:
+      summary: Update the rent of the house
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_rent:
+                  type: number
+      responses:
+        '200':
+          description: Updated house
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/House'
+
+  /houses/me/add-user:
+    post:
+      summary: Add a user to the house
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target_uid:
+                  type: string
+      responses:
+        '201':
+          description: User added to house
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  firebase_uid:
+                    type: string
+                  house_id:
+                    type: integer
+                  joined_at:
+                    type: string
+                    format: date-time
+
+  /tasks:
+    get:
+      summary: Get tasks for the house of the requesting user
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+    post:
+      summary: Create a new task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Task'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /expenses:
+    get:
+      summary: Get expenses for the house of the requesting user
+      responses:
+        '200':
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+    post:
+      summary: Create a new expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Expense'
+      responses:
+        '201':
+          description: Expense created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+  /events:
+    get:
+      summary: Get events for the house of the requesting user
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+    post:
+      summary: Create a new event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '201':
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        firebase_uid:
+          type: string
+        joined_at:
+          type: string
+          format: date-time
+
+    House:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        rent:
+          type: number
+        total_expenses:
+          type: number
+        rent_payments:
+          type: object
+          additionalProperties:
+            type: number
+        expense_payments:
+          type: object
+          additionalProperties:
+            type: number
+        created_at:
+          type: string
+          format: date-time
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        due_date:
+          type: string
+          format: date-time
+        assigned_to_user_id:
+          type: string
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: integer
+        house_id:
+          type: integer
+        payer_uid:
+          type: string
+        amount:
+          type: number
+        date:
+          type: string
+          format: date-time
+        split_among:
+          type: string
+
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+        house_id:
+          type: integer
+        created_by_uid:
+          type: string
+        name:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        description:
+          type: string
