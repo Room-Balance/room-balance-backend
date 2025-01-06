@@ -13,11 +13,29 @@ import (
 
 // Get all events
 func GetEvents(w http.ResponseWriter, r *http.Request) {
+	// Extract Firebase UID from the request context
+	firebaseUID, ok := r.Context().Value("firebase_uid").(string)
+	if !ok || firebaseUID == "" {
+		http.Error(w, "Unauthorized: Firebase UID missing", http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch the house associated with the user
+	var house models.House
+	if err := db.DB.Joins("JOIN user_houses ON user_houses.house_id = houses.id").
+		Where("user_houses.firebase_uid = ?", firebaseUID).First(&house).Error; err != nil {
+		http.Error(w, "House not found", http.StatusNotFound)
+		return
+	}
+
+	// Fetch events belonging to the house
 	var events []models.Event
-	if err := db.DB.Find(&events).Error; err != nil {
+	if err := db.DB.Where("house_id = ?", house.ID).Find(&events).Error; err != nil {
 		http.Error(w, "Failed to fetch events", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(events)
 }
 
@@ -36,15 +54,37 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 
 // Create an event
 func CreateEvent(w http.ResponseWriter, r *http.Request) {
+	// Extract Firebase UID
+	firebaseUID, ok := r.Context().Value("firebase_uid").(string)
+	if !ok || firebaseUID == "" {
+		http.Error(w, "Unauthorized: Firebase UID missing", http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch the user’s house
+	var house models.House
+	if err := db.DB.Joins("JOIN user_houses ON user_houses.house_id = houses.id").
+		Where("user_houses.firebase_uid = ?", firebaseUID).First(&house).Error; err != nil {
+		http.Error(w, "House not found", http.StatusNotFound)
+		return
+	}
+
+	// Decode the event data
 	var event models.Event
 	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
+
+	// Assign the event to the house and creator
+	event.HouseID = house.ID
+	event.CreatedByUID = firebaseUID
 	if err := db.DB.Create(&event).Error; err != nil {
 		http.Error(w, "Failed to create event", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(event)
 }
 

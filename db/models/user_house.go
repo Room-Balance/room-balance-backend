@@ -3,11 +3,7 @@ package models
 import "time"
 
 type UserHouse struct {
-	UserID   uint      `gorm:"primaryKey;autoIncrement:false"`
-	HouseID  uint      `gorm:"primaryKey;autoIncrement:false"`
-	JoinedAt time.Time `gorm:"autoCreateTime"`
-
-	// Relationships
-	User  User  `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
-	House House `gorm:"foreignKey:HouseID;constraint:OnDelete:CASCADE"`
+	FirebaseUID string    `gorm:"not null;index" json:"firebase_uid"` // Use firebase_uid instead of user_id
+	HouseID     uint      `gorm:"not null" json:"house_id"`
+	JoinedAt    time.Time `json:"joined_at"`
 }

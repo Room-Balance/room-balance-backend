@@ -13,11 +13,29 @@ import (
 
 // Get all expenses
 func GetExpenses(w http.ResponseWriter, r *http.Request) {
+	// Extract Firebase UID from the request context
+	firebaseUID, ok := r.Context().Value("firebase_uid").(string)
+	if !ok || firebaseUID == "" {
+		http.Error(w, "Unauthorized: Firebase UID missing", http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch the house associated with the user
+	var house models.House
+	if err := db.DB.Joins("JOIN user_houses ON user_houses.house_id = houses.id").
+		Where("user_houses.firebase_uid = ?", firebaseUID).First(&house).Error; err != nil {
+		http.Error(w, "House not found", http.StatusNotFound)
+		return
+	}
+
+	// Fetch expenses belonging to the house
 	var expenses []models.Expense
-	if err := db.DB.Find(&expenses).Error; err != nil {
+	if err := db.DB.Where("house_id = ?", house.ID).Find(&expenses).Error; err != nil {
 		http.Error(w, "Failed to fetch expenses", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(expenses)
 }
 
@@ -36,15 +54,37 @@ func GetExpense(w http.ResponseWriter, r *http.Request) {
 
 // Create an expense
 func CreateExpense(w http.ResponseWriter, r *http.Request) {
+	// Extract Firebase UID
+	firebaseUID, ok := r.Context().Value("firebase_uid").(string)
+	if !ok || firebaseUID == "" {
+		http.Error(w, "Unauthorized: Firebase UID missing", http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch the user’s house
+	var house models.House
+	if err := db.DB.Joins("JOIN user_houses ON user_houses.house_id = houses.id").
+		Where("user_houses.firebase_uid = ?", firebaseUID).First(&house).Error; err != nil {
+		http.Error(w, "House not found", http.StatusNotFound)
+		return
+	}
+
+	// Decode the expense data
 	var expense models.Expense
 	if err := json.NewDecoder(r.Body).Decode(&expense); err != nil {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
+
+	// Assign the expense to the house and payer
+	expense.HouseID = house.ID
+	expense.PayerUID = firebaseUID
 	if err := db.DB.Create(&expense).Error; err != nil {
 		http.Error(w, "Failed to create expense", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(expense)
 }
 
