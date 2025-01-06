@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/Room-Balance/room-balance-backend.git/handlers"
+	"github.com/Room-Balance/room-balance-backend.git/middlewares"
 	"github.com/gorilla/mux"
 )
 
@@ -9,40 +10,36 @@ func RegisterRoutes() *mux.Router {
 	// Initialize the router
 	router := mux.NewRouter()
 
-	// User Routes
-	router.HandleFunc("/api/users", handlers.GetUsers).Methods("GET")
+	// Public Routes (e.g., user signup)
 	router.HandleFunc("/api/users", handlers.CreateUser).Methods("POST")
-	router.HandleFunc("/api/users/{id:[0-9]+}", handlers.GetUser).Methods("GET")
-	router.HandleFunc("/api/users/{id:[0-9]+}", handlers.UpdateUser).Methods("PUT")
-	router.HandleFunc("/api/users/{id:[0-9]+}", handlers.DeleteUser).Methods("DELETE")
+
+	// Protected Routes
+	authRouter := router.PathPrefix("/api").Subrouter()
+	authRouter.Use(middlewares.AuthMiddleware)
+
+	// User Routes
+	authRouter.HandleFunc("/users/me", handlers.GetUser).Methods("GET")
+	authRouter.HandleFunc("/users/data", handlers.GetUserData).Methods("GET")
 
 	// House Routes
-	router.HandleFunc("/api/houses", handlers.GetHouses).Methods("GET")
-	router.HandleFunc("/api/houses", handlers.CreateHouse).Methods("POST")
-	router.HandleFunc("/api/houses/{id:[0-9]+}", handlers.GetHouse).Methods("GET")
-	router.HandleFunc("/api/houses/{id:[0-9]+}", handlers.UpdateHouse).Methods("PUT")
-	router.HandleFunc("/api/houses/{id:[0-9]+}", handlers.DeleteHouse).Methods("DELETE")
+	authRouter.HandleFunc("/houses/me", handlers.GetHouse).Methods("GET")
+	authRouter.HandleFunc("/houses/me/rent", handlers.UpdateHouseRent).Methods("PUT")
+	authRouter.HandleFunc("/houses/me/add-user", handlers.AddUserToHouse).Methods("POST")
+	authRouter.HandleFunc("/houses/me/rent", handlers.UpdateRentPayments).Methods("POST")
+	authRouter.HandleFunc("/houses/me/expenses", handlers.UpdateExpensePayments).Methods("POST")
+	authRouter.HandleFunc("/houses", handlers.CreateHouse).Methods("POST")
 
 	// Task Routes
-	router.HandleFunc("/api/tasks", handlers.GetTasks).Methods("GET")
-	router.HandleFunc("/api/tasks", handlers.CreateTask).Methods("POST")
-	router.HandleFunc("/api/tasks/{id:[0-9]+}", handlers.GetTask).Methods("GET")
-	router.HandleFunc("/api/tasks/{id:[0-9]+}", handlers.UpdateTask).Methods("PUT")
-	router.HandleFunc("/api/tasks/{id:[0-9]+}", handlers.DeleteTask).Methods("DELETE")
+	authRouter.HandleFunc("/tasks", handlers.GetTasks).Methods("GET")
+	authRouter.HandleFunc("/tasks", handlers.CreateTask).Methods("POST")
 
 	// Expense Routes
-	router.HandleFunc("/api/expenses", handlers.GetExpenses).Methods("GET")
-	router.HandleFunc("/api/expenses", handlers.CreateExpense).Methods("POST")
-	router.HandleFunc("/api/expenses/{id:[0-9]+}", handlers.GetExpense).Methods("GET")
-	router.HandleFunc("/api/expenses/{id:[0-9]+}", handlers.UpdateExpense).Methods("PUT")
-	router.HandleFunc("/api/expenses/{id:[0-9]+}", handlers.DeleteExpense).Methods("DELETE")
+	authRouter.HandleFunc("/expenses", handlers.GetExpenses).Methods("GET")
+	authRouter.HandleFunc("/expenses", handlers.CreateExpense).Methods("POST")
 
 	// Event Routes
-	router.HandleFunc("/api/events", handlers.GetEvents).Methods("GET")
-	router.HandleFunc("/api/events", handlers.CreateEvent).Methods("POST")
-	router.HandleFunc("/api/events/{id:[0-9]+}", handlers.GetEvent).Methods("GET")
-	router.HandleFunc("/api/events/{id:[0-9]+}", handlers.UpdateEvent).Methods("PUT")
-	router.HandleFunc("/api/events/{id:[0-9]+}", handlers.DeleteEvent).Methods("DELETE")
+	authRouter.HandleFunc("/events", handlers.GetEvents).Methods("GET")
+	authRouter.HandleFunc("/events", handlers.CreateEvent).Methods("POST")
 
 	return router
 }

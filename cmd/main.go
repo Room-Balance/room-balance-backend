@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Room-Balance/room-balance-backend.git/db"
+	"github.com/Room-Balance/room-balance-backend.git/middlewares"
 	"github.com/Room-Balance/room-balance-backend.git/routes"
 )
 
@@ -12,6 +13,9 @@ func main() {
 	// Connect to the database
 	db.ConnectDB()
 	db.MigrateDB()
+
+	// Initialize Firebase
+	middlewares.InitFirebase()
 
 	// Initialize routes
 	router := routes.RegisterRoutes()

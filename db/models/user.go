@@ -3,9 +3,9 @@ package models
 import "time"
 
 type User struct {
-	ID       uint      `gorm:"primaryKey"`
-	Name     string    `gorm:"type:varchar(100);not null"`
-	Email    string    `gorm:"type:varchar(100);unique;not null"`
-	Password string    `gorm:"type:varchar(255);not null"`
-	JoinedAt time.Time `gorm:"autoCreateTime"`
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Name        string    `gorm:"not null" json:"name"`
+	Email       string    `gorm:"unique;not null" json:"email"`
+	FirebaseUID string    `gorm:"unique;not null" json:"firebase_uid"` // Used for user identification
+	JoinedAt    time.Time `json:"joined_at"`
 }
